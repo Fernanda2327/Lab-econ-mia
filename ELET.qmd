@@ -1,0 +1,316 @@
+---
+title: "Fernanda Herbst"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: load-packages
+#| include: false
+
+library(tidyverse)
+library(WDI)
+library(ggplot2)
+library(dplyr)
+library(scales)
+
+
+options(scipen = 999) # REMOVER A NOT. CIENT.
+
+ 
+#DADOS EM PAINEL
+
+elet<- WDI(country = "all",indicator = "EG.ELC.ACCS.ZS")
+
+# CORTE TRANSVERSAL
+
+elet2023 <- WDI(country = "all", indicator = "EG.ELC.ACCS.ZS", start ="2023", end = "2023")
+
+elet2022 <- WDI(country = "all", indicator = "EG.ELC.ACCS.ZS", start ="2022", end = "2022")
+
+
+# SÉRIE TEMPORAL
+
+eletbr <-  WDI(country = "BR", indicator = "EG.ELC.ACCS.ZS")
+```
+
+## ACESSO Á ELETRICIDADE (% DA POPULAÇÃO)
+
+A variável **EG.ELC.ACCS.ZS**, utilizada pelo Banco Mundial, representa a **porcentagem da população com acesso à eletricidade** em um determinado país. Ela indica o nível de cobertura da infraestrutura elétrica, sendo fundamental para avaliar o desenvolvimento social, econômico e tecnológico de uma nação. Quanto mais próximo de 100%, maior a proporção de habitantes com acesso à energia elétrica – um recurso essencial para qualidade de vida, educação, saúde e crescimento econômico.
+
+## GRÁFICO DE DADOS EM PAINEL
+
+O gráfico apresenta a evolução do acesso à eletricidade (% da população) em países selecionados entre os anos de 1990 e 2023.
+
+A análise mostra que Alemanha, Argentina e Estados Unidos já apresentavam altos níveis de acesso à eletricidade em 1990, todos acima de 90%, alcançando 100% em 2020 e mantendo esse patamar em 2023.
+
+Em contrapartida, Moçambique e Sudão do Sul apresentam um cenário de acesso muito mais limitado. Moçambique teve um crescimento gradual, saindo de um patamar muito baixo em 2000 para cerca de 40% em 2023. O Sudão do Sul, incluído a partir de 2010, mostra acesso extremamente baixo e com pouca evolução até 2023.
+
+Esse comparativo evidencia a desigualdade no acesso à eletricidade entre países desenvolvidos e em desenvolvimento, especialmente em regiões da África subsaariana, ressaltando a necessidade de investimentos em infraestrutura energética nesses países.
+
+```{r}
+#| label: graficodadosempainel
+#| warning: false
+#| echo: false
+
+# Definindo os anos e as abreviações
+anos_desejados <- c(1990, 2000, 2010, 2020, 2023)
+
+  abrevia_pais <- c(
+    "Brazil" = "BRA",
+    "United States" = "EUA",
+    "Argentina" = "ARG",
+    "Germany" = "ALE",
+    "South Sudan" = "SDS",
+    "Mozambique" = "MOÇ"
+  )
+
+elet_plot <- elet 
+
+
+paises_interesse <- names(abrevia_pais)
+
+elet_plot <- elet |>
+  filter(year %in% anos_desejados, 
+         country %in% paises_interesse,
+         !is.na(EG.ELC.ACCS.ZS)) %>%
+  mutate(
+    pais_abrev = abrevia_pais[country],
+    cor_personalizada = case_when(
+      country == "Brasil" ~ "red",
+      country == "United States" ~ "#457B9D",
+      country == "Germany" ~ "#A8DADC",
+      country == "South Sudan" ~ "#A8DADC",
+      country == "Mozambique" ~ "#A8DADC",
+      country == "Argentina" ~ "#A8DADC",
+    )
+  )
+
+# Aplicando filtros e abreviações
+elet_plot <- elet|>
+  filter(year %in% anos_desejados) |>
+  mutate(
+    pais_abrev = abrevia_pais[country],
+    cor_personalizada = case_when(
+      country == "Brazil" ~ "red",
+      country == "United States" ~ "#457B9D",
+      country == "Germany" ~ "#A8DADC",
+      country == "South Sudan" ~ "#A8DADC",
+      country == "Mozambique" ~ "#A8DADC",
+      country == "Argentina" ~ "#A8DADC",
+    )
+  )
+
+ggplot(elet_plot, aes(x = factor(year), y = EG.ELC.ACCS.ZS, fill = cor_personalizada)) +
+  geom_col(aes(group = pais_abrev), 
+           position = position_dodge(width = 0.8), width = 0.7) +
+  geom_text(aes(label = pais_abrev, group = pais_abrev),
+            position = position_dodge(width = 0.8),
+            vjust = -0.7, size = 2, fontface = "bold", color = "black") +
+  scale_fill_identity() +
+  scale_y_continuous(limits = c(0, 110), expand = expansion(mult = c(0, 0.05))) +
+  labs(
+    title = "\u26A1 Acesso à Eletricidade (% da População) \u26A1",
+    subtitle = "Comparativo entre países selecionados (1990–2023)",
+    x = "Ano",
+    y = "Acesso (%)"
+  ) +
+  theme_minimal(base_family = "sans") +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5, color = "#1D3557"),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "#457B9D"),
+    axis.title = element_text(size = 10, face = "bold"),
+    axis.text = element_text(size = 10),
+    legend.position = "none",
+    panel.grid.major = element_line(color = "gray85"),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(color = "black"),
+    plot.background = element_rect(fill = "white", color = NA)
+  )
+
+
+```
+
+```         
+```
+
+## GRÁFICO DE DADOS DE CORTE TRANSVERSAL
+
+Este gráfico apresenta o acesso à eletricidade em 30 países (ou agrupamentos) em 2023, destacando o Brasil em vermelho. Analisando o gráfico podemos destacar os seguintes pontos:\
+
+-   A maioria dos países ou regiões listadas no topo do gráfico apresenta 100% de acesso à eletricidade, como União Europeia, América do Norte, Europa Central e outros blocos econômicos avançados.
+-   O Brasil aparece em destaque com 99% de acesso à eletricidade, ligeiramente abaixo dos países com cobertura total, indicando um alto nível de universalização.
+-   Já os países com menor acesso concentram-se majoritariamente na África Subsaariana. O Sudão do Sul, por exemplo, tem o menor índice, com apenas 5,4% da população com acesso à eletricidade.
+-   A desigualdade no acesso é evidente: enquanto alguns países têm cobertura universal, outros apresentam taxas abaixo de 20%, o que evidencia desafios de infraestrutura e desenvolvimento em algumas regiões.
+
+```{r}
+#| label: graficocortetransversal
+#| warning: false 
+#| echo: false  
+
+# Carregar pacotes necessários
+library(ggplot2)
+library(dplyr)
+library(scales)
+
+# ========================
+# PREPARAÇÃO DOS DADOS
+# ========================
+
+elet2023_clean <- elet %>%
+  filter(year == 2023) %>%
+  select(country, EG.ELC.ACCS.ZS)
+
+# Adicionar coluna de status para categorização visual
+elet2023_clean <- elet2023_clean |>
+  mutate(
+    status_eletricidade = case_when(
+      country == "Brazil" ~ "Brasil",
+      EG.ELC.ACCS.ZS >= 100 ~ "100% de Acesso",
+      TRUE ~ "Acesso Parcial"
+    )
+  )
+
+# Selecionar 14 países com 100% de acesso à eletricidade (excluindo o Brasil)
+top100 <- elet2023_clean |>
+  filter(EG.ELC.ACCS.ZS >= 100, country != "Brazil") %>%
+  arrange(desc(EG.ELC.ACCS.ZS)) %>%
+  slice(1:14)
+
+# Selecionar 15 países com menor acesso
+bottom_poor <- elet2023_clean |>
+  filter(EG.ELC.ACCS.ZS < 100) %>%
+  arrange(EG.ELC.ACCS.ZS) %>%
+  slice(1:15)
+
+# Combinar os países selecionados com o Brasil
+elet30 <- bind_rows(top100, bottom_poor, elet2023_clean %>% filter(country == "Brazil"))
+
+# Traduzir nomes dos países para o português
+elet30 <- elet30 |>
+  mutate(country_pt = recode(country,
+    "Post-demographic dividend" = "Pós-dividendo demográfico",
+    "North América" = "N. América",
+    "European Union" = "União Europeia",
+    "Europe & Central Asia (IDA & IBRD countries)" = "Europa & Ásia Central (países IDA & IBRD)",
+    "Europe & Central Asia (excluding high income)" = "Europa & Ásia Central (exceto alto rendimento)",
+    "Europe & Central Asia" = "Europa & Ásia Central",
+    "Euro área" = "Área do Euro",
+    "Central Europe and the Baltics" = "Europa Central & Bálticos",
+    "Armenia" = "Armênia",
+    "Argentina" = "Argentina",
+    "Antigua and Barbuda" = "Antígua & Barbuda",
+    "Andorra" = "Andorra",
+    "Algeria" = "Argélia",
+    "Albânia" = "Albânia",
+    "Brazil" = "Brasil",
+    "Low Income" = "Baixa Renda",
+    "Guinea-Bissau" = "Guiné-Bissau",
+    "Madagascar" = "Madagascar",
+    "Mozambique" = "Moçambique",
+    "Sierra Leone" = "Serra Leoa",
+    "Liberia" = "Libéria",
+    "Congo Dem. Rep." = "Rep. Dem. do Congo",
+    "Burkina Faso" = "Burkina Faso",
+    "Papua New Guinea" = "Papua Nova Guiné",
+    "Niger" = "Níger",
+    "Central African Republic" = "Rep. Centro-Africana",
+    "Malawi" = "Malawi",
+    "Chad" = "Chade",
+    "Burundi" = "Burundi",
+    "South Sudan" = "Sudão do Sul",
+    .default = country  # Caso algum país não esteja listado, mantemos o nome original
+  ))
+
+ggplot(data = elet30, aes(x = reorder(country_pt, EG.ELC.ACCS.ZS), 
+                          y = EG.ELC.ACCS.ZS, 
+                          fill = status_eletricidade)) +
+  geom_col(width = 0.7, alpha = 0.9) +
+  geom_text(aes(label = paste0(round(EG.ELC.ACCS.ZS, 1), "%")),
+            hjust = -0.2,
+            size = 4,
+            family = "Arial",
+            color = "black") +
+  scale_fill_manual(
+    values = c("Brasil" = "red", 
+               "100% de Acesso" = "#457B9D", 
+               "Acesso Parcial" = "#A8DADC"),
+    name = "Status de Acesso"
+  ) +
+  labs(
+    title = "🔌 Acesso à Eletricidade em 30 Países (2023)",
+    subtitle = "Brasil em destaque. Comparação entre países com 100% e com acesso parcial.",
+    x = NULL,
+    y = "Acesso à Eletricidade (% da População)",
+    caption = "Fonte: Banco Mundial | Elaboração própria"
+  ) +
+  scale_y_continuous(
+    limits = c(0, 105),
+    breaks = seq(0, 100, 10),
+    labels = function(x) paste0(x, "%"),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  coord_flip() +
+  theme_minimal(base_family = "Arial") +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5, color = "#1D3557"),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "#457B9D"),
+    plot.caption = element_text(size = 10, hjust = 1, color = "gray50"),
+    axis.title.y = element_text(size = 10, margin = margin(r = 10)),
+    axis.title.x = element_text(size = 10, margin = margin(t = 10)),
+    axis.text.x = element_text(size = 6, color = "gray30"),  # Diminui o tamanho da fonte do eixo X
+    axis.text.y = element_text(size = 8, color = "gray30"),  # Diminui o tamanho da fonte do eixo Y
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 6),
+    panel.grid.major.x = element_line(color = "gray80", linetype = "dashed"),
+    panel.grid.minor = element_blank(),
+    plot.background = element_rect(fill = "white", color = NA)
+  )
+
+
+```
+
+## GRÁFICO DE DADOS DE SÉRIE TEMPORAL
+
+O gráfico mostra a evolução do acesso à eletricidade no Brasil entre 1990 e 2023.
+
+Em 1990, cerca de 87,5% da população brasileira tinha acesso à eletricidade. A partir daí, observa-se um crescimento contínuo e expressivo:
+
+-   Em 2000, o índice subiu para aproximadamente 94%;
+
+-   Em 2010, atingiu cerca de 98,5%;
+
+-   Em 2020 e 2023, o acesso ultrapassou os 99,5%, beirando a universalização.
+
+Esse progresso reflete avanços significativos em políticas públicas, programas de eletrificação rural e expansão da infraestrutura energética no país, especialmente nas décadas de 1990 e 2000. A estabilização dos dados próximos a 100% nas últimas duas décadas indica que o Brasil praticamente universalizou o acesso à eletricidade, embora ainda possa haver desafios residuais em regiões muito isoladas.
+
+```{r}
+#| label: graficoserietemporal
+#| warning: false  
+#| echo: false    
+
+
+ # Filtrar os anos desejados
+ eletbr_filtrado <- eletbr |>
+   filter(year %in% c(1990, 2000, 2010, 2020, 2023))
+ 
+ # Criar o gráfico
+ ggplot(data = eletbr_filtrado, aes(x = factor(year), y = EG.ELC.ACCS.ZS, group = 1)) +
+   geom_line(color = "#E63946", size = 1.5) +  # Linha com cor personalizada
+   geom_point(color = "#1D3557", size = 3) +   # Pontinhos nos anos
+   labs(
+     title = "Acesso à Eletricidade no Brasil (1990–2023)",
+     x = "Ano",
+     y = "Acesso à eletricidade (% da população)"
+   ) +
+   theme_minimal(base_family = "Arial") +
+   theme(
+     plot.title = element_text(size = 18, face = "bold", hjust = 0.5, color = "#1D3557"),
+     axis.title.x = element_text(size = 14, face = "bold"),
+     axis.title.y = element_text(size = 14, face = "bold"),
+     axis.text = element_text(size = 12),
+     panel.grid.major = element_line(color = "gray90"),
+     panel.grid.minor = element_blank()
+   )
+ 
+```
