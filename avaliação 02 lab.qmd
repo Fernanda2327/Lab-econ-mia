@@ -1,0 +1,166 @@
+---
+title: "Fernanda Herbst"
+format: html
+editor: visual
+html:
+self-contained: true
+toc: true
+theme: cosmo
+---
+
+## TAXA BÁSICA FINANCEIRA
+
+A variável 253 - Taxa Básica Financeira (TBF) é uma taxa de juros de referência que o Banco Central do Brasil divulga diariamente. Ela é determinada através do cálculo da média ponderada das taxas de juros dos títulos públicos federais prefixados (especialmente LTN) que são negociados no mercado secundário.\
+\
+A Taxa Básica Financeira (TBF) foi estabelecida em 1995 e serve principalmente como referência para a Taxa Referencial (TR), que afeta a remuneração de produtos financeiros como a poupança, empréstimos para moradia e certos tipos de investimentos. Apesar de ter perdido relevância em relação à taxa Selic ao longo do tempo, a TBF continua sendo um indicador importante no cenário das finanças públicas e contratos financeiros no Brasil.
+
+## GRÁFICO
+
+O gráfico mostra a progressão da Taxa Básica Financeira (TBF) média anual no Brasil ao longo do tempo, ressaltando seus principais eventos históricos e tendências de mercado.
+
+O gráfico realça em vermelho o ano em que a TBF alcançou seu valor mais alto na história. Este pico, comum em momentos de inflação elevada ou instabilidade econômica, evidencia o esforço do Banco Central para controlar pressões inflacionárias através do aumento das taxas de juros. Este fenômeno pode estar ligado a crises cambiais, fuga de capitais ou desvalorização repentina da moeda, como aconteceu durante transições de governo ou alterações no sistema monetário.Por outro lado, o ícone verde simboliza o valor mínimo da série, comumente ligado a um cenário de maior estabilidade econômica, controle da inflação ou estratégias de estímulo ao crescimento através da diminuição das taxas de juros. Isso costuma acontecer em momentos de confiança no cenário macroeconômico e estabilidade fiscal.
+
+O gráfico também destaca com pontos azuis três anos significativos:
+
+1999: Mudança para a política monetária de câmbio flutuante, inaugurando uma nova fase na política monetária do Brasil.
+
+2008: Impactos da crise financeira mundial, que provocaram grande instabilidade nos mercados globais e impactaram na gestão das taxas de juros no Brasil.
+
+2015: Ano de retração econômica, marcado por alta inflação e deterioração da credibilidade fiscal, demandando uma ação contundente da política monetária.
+
+Ao longo das últimas décadas, nota-se uma tendência de redução da TBF, que é coerente com o amadurecimento do sistema de metas de inflação e o fortalecimento das instituições fiscais e monetárias. No entanto, o gráfico mostra que elementos externos e internos, tais como crises políticas, impactos internacionais ou mudanças na situação fiscal, continuam a ter um impacto significativo nos juros praticados no país.
+
+```{r}
+#| label: grafico
+#| warning: false
+#| echo: false
+
+library(GetBCBData)
+library(dplyr)
+library(lubridate)
+library(plotly)
+library(purrr)
+
+TBF.id <- 253
+
+DadosTBF <- gbcbd_get_series(
+  id = TBF.id,
+  first.date = "1995-07-01",
+  last.date = Sys.Date(),
+  format.data = "long"
+)
+
+DadosTBF_resumo <- DadosTBF %>%
+  mutate(ano = year(ref.date)) %>%
+  group_by(ano) %>%
+  summarise(taxa_media = mean(value, na.rm = TRUE), .groups = "drop")
+
+ponto_max <- DadosTBF_resumo %>% filter(taxa_media == max(taxa_media, na.rm = TRUE))
+ponto_min <- DadosTBF_resumo %>% filter(taxa_media == min(taxa_media, na.rm = TRUE))
+
+# Anotações dinâmicas com y baseado nos dados
+anotacoes <- DadosTBF_resumo %>%
+  filter(ano %in% c(1999, 2008, 2015)) %>%
+  mutate(
+    texto = c(
+      "🔵 Metas de Inflação (1999)",
+      "🔵 Crise Financeira Global (2008)",
+      "🔵 Recessão Brasileira (2015)"
+    )
+  )
+
+xshifts <- c(-30, 60, 170)  # deslocamento horizontal para evitar sobreposição
+
+lista_anotacoes <- map2(anotacoes$ano, seq_along(anotacoes$ano), function(x, i) {
+  list(
+    x = x,
+    y = 1.1,  # Posição vertical acima do gráfico (mas abaixo do título)
+    xref = "x",
+    yref = "paper",
+    text = anotacoes$texto[i],
+    showarrow = FALSE,
+    arrowhead = 4,
+    ax = 0,
+    ay = -30,  # seta aponta para baixo
+    xshift = xshifts[i],
+    font = list(color = "black", size = 12),
+    align = "center",
+    yanchor = "bottom"
+  )
+})
+
+  #Criar dados dos pontos azuis
+pontos_destaque <- DadosTBF_resumo %>% 
+  filter(ano %in% c(1999, 2008, 2015))
+
+
+# Gráfico com animação
+grafico <- plot_ly(
+  data = DadosTBF_resumo,
+  x = ~ano,
+  y = ~taxa_media,
+  type = "scatter",
+  mode = "lines+markers",
+  frame = ~ano,
+  line = list(color = "#1f77b4", width = 3),
+  marker = list(color = "#FF7F0E", size = 8),
+  name = "📊 TBF Média Anual",
+  text = ~paste0("Ano: ", ano, "<br>Taxa Média: ", round(taxa_media, 2), "%"),
+  hoverinfo = "text"
+) %>%
+  add_trace(
+    data = ponto_max,
+    x = ~ano,
+    y = ~taxa_media,
+    type = "scatter",
+    mode = "markers+text",
+    marker = list(color = "red", size = 12),
+    text = ~paste0("📈 Máximo: ", round(taxa_media, 2), "%"),
+    textposition = "top right",
+    name = "📈 Máximo Histórico",
+    showlegend = TRUE,
+    inherit = FALSE
+  ) %>%
+  add_trace(
+    data = ponto_min,
+    x = ~ano,
+    y = ~taxa_media,
+    type = "scatter",
+    mode = "markers+text",
+    marker = list(color = "green", size = 12),
+    text = ~paste0("📉 Mínimo: ", round(taxa_media, 2), "%"),
+    textposition = "bottom right",
+    name = "📉 Mínimo Histórico",
+    showlegend = TRUE,
+    inherit = FALSE
+  ) %>%
+  add_trace(
+    data = pontos_destaque,
+    x = ~ano,
+    y = ~taxa_media,
+    type = "scatter",
+    mode = "markers",
+    marker = list(color = "blue", size = 10),
+    name = "Eventos Econômicos",
+    showlegend = TRUE,
+    inherit = FALSE
+  )%>%
+  layout(
+    title = list(
+      text = "<b>TBF Média Anual no Brasil<br>(Animação com Destaques e Eventos)</b>",
+      y = 0.95
+    ),
+    xaxis = list(title = "Ano", dtick = 1),
+    yaxis = list(title = "Taxa Média (%)", range = c(0, max(DadosTBF_resumo$taxa_media) + 2)),
+    plot_bgcolor = "#f9f9f9",
+    paper_bgcolor = "#f9f9f9",
+    margin = list(l = 50, r = 50, b = 80, t = 120),
+    annotations = lista_anotacoes
+  ) %>%
+  animation_opts(frame = 700, transition = 300, redraw = TRUE) %>%
+  animation_slider(visible = FALSE) %>%
+  animation_button(x = 0, xanchor = "left", y = 0, yanchor = "bottom") %>%
+  plotly::config(displayModeBar = TRUE)
+
+grafico
+```
